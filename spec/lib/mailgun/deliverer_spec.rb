@@ -115,6 +115,15 @@ describe Mailgun::Deliverer do
       msg.message_id.should eq "20111114174239.25659.5817@samples.mailgun.org"
     end
 
+    it "should call mailgun api per each 1000 receivers" do
+      rest_response = double(:code => 200, :to_str => '{"message": "Queued. Thank you.","id": "<20111114174239.25659.5817@samples.mailgun.org>"}')
+      allow(mailgun_client).to receive(:send_message).and_return(rest_response)
+      Mailgun::Deliverer.new(api_key: api_key, domain: domain).deliver!(over_thousands_receivers_batch_message 2)
+      mailgun_client.should have_received(:send_message).with(hash_including(to: (1..1000).to_a.map { |i| "#{i}@email.com" }))
+      mailgun_client.should have_received(:send_message).with(hash_including(to: (1001..2000).to_a.map { |i| "#{i}@email.com" }))
+      mailgun_client.should have_received(:send_message).with(hash_including(to: ["2001@email.com"]))
+    end
+
     def check_mailgun_message(rails_message, mailgun_message)
       rest_response = double(:code => 200, :to_str => '{"message": "Queued. Thank you.","id": "<20111114174239.25659.5817@samples.mailgun.org>"}')
       mailgun_client.should_receive(:send_message).with(mailgun_message).and_return(rest_response)
@@ -163,6 +172,16 @@ describe Mailgun::Deliverer do
 
     def text_rails_message_with_names
       Mail::Message.new(common_rails_message_properties.merge(content_type: 'text/plain', body: text_body).merge(emails_with_names))
+    end
+
+    def over_thousands_receivers_batch_message thousand
+      message = Mail::Message.new(common_rails_message_properties.merge(content_type: 'text/html', body: html_body).merge(thousands_receivers thousand))
+      message.mailgun_recipient_variables = {foo: 'bar'}
+      message
+    end
+
+    def thousands_receivers thousand
+      {from: ['Sender <from@email.com>'], to: (1..1000*thousand +1).to_a.map {|x| "#{x}@email.com" }}
     end
 
     def emails_with_names
