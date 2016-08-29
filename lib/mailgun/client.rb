@@ -2,7 +2,7 @@ require 'rest_client'
 
 module Mailgun
   class Client
-    include Mailgun::Logging
+    include Logging
     attr_reader :api_key, :domain
 
     def initialize(api_key, domain)
