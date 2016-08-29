@@ -1,4 +1,5 @@
 require 'rest_client'
+require 'mailgun/logging'
 
 module Mailgun
   class Client
