@@ -15,12 +15,13 @@ module Mailgun
       begin
         logger.info 'Sending request to mailgun'
         logger.debug "with options #{options}"
-        RestClient.post mailgun_url, options
+        response = RestClient.post mailgun_url, options
         logger.info 'Successfully sent request to mailgun'
       rescue => e
         logger.error e.message
         logger.error e.response
       end
+      response
     end
 
     def mailgun_url
